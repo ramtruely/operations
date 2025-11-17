@@ -1,0 +1,103 @@
+pipeline {
+    agent any
+
+    environment {
+        GIT_URL        = "https://github.com/your-org/your-shared-library.git"
+        REPO_NAME      = "your-shared-library"
+        ZIP_FILE       = "shared-lib.zip"
+        NEXUS_URL      = "https://your-nexus.com/repository/your-repo/"
+        NEXUS_CRED     = "nexus-service-account"         // Jenkins credentials ID
+    }
+
+    stages {
+
+        stage('Install Git') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh """
+                            if ! command -v git >/dev/null 2>&1; then
+                                echo 'Git not found. Installing...'
+                                sudo apt-get update
+                                sudo apt-get install -y git zip
+                            else
+                                echo 'Git already installed'
+                            fi
+                        """
+                    } else {
+                        bat """
+                            where git || (
+                                echo Git not found, installing via winget...
+                                winget install --id Git.Git -e --source winget
+                            )
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Clone Shared Library Repo') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh """
+                            rm -rf ${REPO_NAME}
+                            git clone ${GIT_URL}
+                        """
+                    } else {
+                        bat """
+                            rmdir /S /Q ${REPO_NAME} 2>nul
+                            git clone ${GIT_URL}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Zip Shared Library') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh """
+                            rm -f ${ZIP_FILE}
+                            cd ${REPO_NAME}
+                            zip -r ../${ZIP_FILE} .
+                        """
+                    } else {
+                        bat """
+                            del ${ZIP_FILE} 2>nul
+                            powershell -Command "Compress-Archive -Path ${REPO_NAME}\\* -DestinationPath ${ZIP_FILE}"
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Upload ZIP to Nexus') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: env.NEXUS_CRED,
+                                                 usernameVariable: 'USER',
+                                                 passwordVariable: 'PASS')]) {
+
+                    script {
+                        if (isUnix()) {
+                            sh """
+                                curl -v -u $USER:$PASS --upload-file ${ZIP_FILE} ${NEXUS_URL}${ZIP_FILE}
+                            """
+                        } else {
+                            bat """
+                                curl -v -u %USER%:%PASS% --upload-file ${ZIP_FILE} ${NEXUS_URL}${ZIP_FILE}
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline completed."
+        }
+    }
+}
