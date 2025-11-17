@@ -2,88 +2,117 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_REPO_ZIP = "https://github.com/<org>/<repo>/archive/refs/heads/main.zip"
-        DOWNLOAD_ZIP    = "repo.zip"
-        EXTRACT_DIR     = "repo"
-        FINAL_ZIP       = "shared-lib.zip"
-        NEXUS_URL       = "https://nexus.com/repository/raw-repo/"
-        NEXUS_CRED      = "nexus-creds"
+        GIT_REPO_URL = "https://github.com/yourorg/your-shared-library.git"
+        BRANCH = "main"
+        ZIP_NAME = "shared-library.zip"
+
+        NEXUS_URL = "http://<nexus-host>:8081/repository/<your-repo>/"
+        NEXUS_USER = "service-user"
+        NEXUS_PASS = "service-password"
     }
 
     stages {
 
-        stage('Download Shared Library from GitHub (NO GIT)') {
+        stage('Install Git + Zip') {
             steps {
                 script {
                     if (isUnix()) {
-                        sh """
-                            rm -f ${DOWNLOAD_ZIP}
-                            curl -L ${GITHUB_REPO_ZIP} -o ${DOWNLOAD_ZIP}
-                        """
+                        sh '''
+                            echo "Installing git + zip on Linux..."
+                            if command -v apt-get >/dev/null; then
+                                sudo apt-get update -y
+                                sudo apt-get install -y git zip
+                            elif command -v yum >/dev/null; then
+                                sudo yum install -y git zip
+                            else
+                                echo "Unsupported Linux OS"
+                                exit 1
+                            fi
+                        '''
                     } else {
-                        bat """
-                            curl -L ${GITHUB_REPO_ZIP} -o ${DOWNLOAD_ZIP}
-                        """
+                        bat '''
+                            echo Installing Git on Windows...
+                            where git
+                            if %errorlevel% neq 0 (
+                                powershell -Command "winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements"
+                            )
+                            echo Ensuring zip is available...
+                            powershell -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem"
+                        '''
                     }
                 }
             }
         }
 
-        stage('Extract ZIP') {
+        stage('Clone Shared Library Repo') {
             steps {
                 script {
                     if (isUnix()) {
-                        sh """
-                            rm -rf ${EXTRACT_DIR}
-                            unzip ${DOWNLOAD_ZIP} -d ${EXTRACT_DIR}
-                        """
+                        sh '''
+                            echo "Cloning on Linux..."
+                            rm -rf shared-library || true
+                            git clone -b ${BRANCH} ${GIT_REPO_URL} shared-library
+                        '''
                     } else {
-                        bat """
-                            rmdir /S /Q ${EXTRACT_DIR} 2>nul
-                            powershell -Command "Expand-Archive -Path ${DOWNLOAD_ZIP} -DestinationPath ${EXTRACT_DIR} -Force"
-                        """
+                        bat '''
+                            echo Cloning on Windows...
+                            rmdir /S /Q shared-library 2>nul
+                            git clone -b %BRANCH% %GIT_REPO_URL% shared-library
+                        '''
                     }
                 }
             }
         }
 
-        stage('Re-Zip for Nexus Upload') {
+        stage('Zip Repo') {
             steps {
                 script {
                     if (isUnix()) {
-                        sh """
-                            rm -f ${FINAL_ZIP}
-                            cd ${EXTRACT_DIR}
-                            zip -r ../${FINAL_ZIP} .
-                        """
+                        sh '''
+                            echo "Zipping on Linux..."
+                            rm -f ${ZIP_NAME}
+                            zip -r ${ZIP_NAME} shared-library
+                        '''
                     } else {
-                        bat """
-                            del ${FINAL_ZIP} 2>nul
-                            powershell -Command "Compress-Archive -Path ${EXTRACT_DIR}\\* -DestinationPath ${FINAL_ZIP} -Force"
-                        """
+                        bat '''
+                            echo Zipping on Windows...
+                            if exist %ZIP_NAME% del %ZIP_NAME%
+                            powershell -Command "Compress-Archive -Path shared-library -DestinationPath %ZIP_NAME%"
+                        '''
                     }
                 }
             }
         }
 
-        stage('Upload ZIP to Nexus') {
+        stage('Upload to Nexus') {
             steps {
-                withCredentials([
-                    usernamePassword(credentialsId: NEXUS_CRED, usernameVariable: 'USER', passwordVariable: 'PASS')
-                ]) {
-                    script {
-                        if (isUnix()) {
-                            sh """
-                                curl -u $USER:$PASS --upload-file ${FINAL_ZIP} ${NEXUS_URL}${FINAL_ZIP}
-                            """
-                        } else {
-                            bat """
-                                curl -u %USER%:%PASS% --upload-file ${FINAL_ZIP} ${NEXUS_URL}${FINAL_ZIP}
-                            """
-                        }
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            echo "Uploading on Linux..."
+                            curl -v -u ${NEXUS_USER}:${NEXUS_PASS} \
+                                --upload-file ${ZIP_NAME} \
+                                ${NEXUS_URL}${ZIP_NAME}
+                        '''
+                    } else {
+                        bat '''
+                            echo Uploading on Windows...
+                            curl -v -u %NEXUS_USER%:%NEXUS_PASS% ^
+                                --upload-file %ZIP_NAME% ^
+                                %NEXUS_URL%%ZIP_NAME%
+                        '''
                     }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Done! Repo cloned, zipped, and uploaded to Nexus."
+        }
+        failure {
+            echo "Pipeline failed — check logs."
         }
     }
 }
