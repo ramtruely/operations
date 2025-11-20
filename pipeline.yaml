@@ -22,3 +22,21 @@ steps:
     script: |
       echo "Extracted files:"
       ls -R extracted
+
+---
+
+steps:
+  - name: gcr.io/cloud-builders/bash
+    script: |
+      echo "Downloading & extracting ZIP from Nexus in one step..."
+
+      curl -u "$NEXUS_USER:$NEXUS_PASS" \
+        -o file.zip \
+        "https://your-nexus-url/repository/your-repo/path/to/file.zip"
+
+      unzip file.zip -d extracted
+
+      echo "Contents after extract:"
+      ls -R extracted
+
+      
