@@ -1,0 +1,24 @@
+steps:
+  # Step 1: Download ZIP from Nexus
+  - name: 'gcr.io/cloud-builders/curl'
+    entrypoint: bash
+    args:
+      - "-c"
+      - |
+        echo "Downloading ZIP from Nexus..."
+        curl -u "$NEXUS_USER:$NEXUS_PASS" \
+          -o downloaded.zip \
+          "https://your-nexus-url/repository/your-repo/path/to/file.zip"
+
+  # Step 2: Extract the ZIP
+  - name: 'gcr.io/cloud-builders/unzip'
+    args:
+      - "downloaded.zip"
+      - "-d"
+      - "extracted"
+
+  # Step 3: Display extracted files (optional)
+  - name: 'gcr.io/cloud-builders/bash'
+    script: |
+      echo "Extracted files:"
+      ls -R extracted
