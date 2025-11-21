@@ -40,3 +40,32 @@ steps:
       ls -R extracted
 
       
+---import java.util.zip.ZipFile
+
+// --- Download ---
+def url = "https://nexus.example.com/shared-lib.zip"
+def creds = System.getenv("NEXUS_CREDS")
+def conn = new URL(url).openConnection()
+conn.setRequestProperty("Authorization", creds)
+new File("shared-lib.zip").bytes = conn.inputStream.bytes
+
+// --- Unzip ---
+new ZipFile("shared-lib.zip").entries().each { e ->
+    def f = new File(e.name)
+    if (e.isDirectory()) f.mkdirs()
+    else { f.parentFile.mkdirs(); f.bytes = new ZipFile("shared-lib.zip").getInputStream(e).bytes }
+}
+
+// --- Auto-load all vars files ---
+def engine = new GroovyScriptEngine(["shared-lib/workspace/vars"] as String[])
+
+// --- Auto-run all public methods in each vars file ---
+new File("shared-lib/workspace/vars").listFiles().each { file ->
+    def script = engine.run(file.name, [])
+    script.metaClass.methods.each { m ->
+        if (m.modifiers == 1 && m.name != "main") {
+            println "Running ${file.name} -> ${m.name}()"
+            script."${m.name}"()
+        }
+    }
+}
