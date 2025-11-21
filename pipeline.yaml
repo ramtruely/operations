@@ -40,7 +40,8 @@ steps:
       ls -R extracted
 
       
----import java.util.zip.ZipFile
+---
+import java.util.zip.ZipFile
 
 // --- Download ---
 def url = "https://nexus.example.com/shared-lib.zip"
