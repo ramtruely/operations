@@ -10,6 +10,9 @@ steps:
           -o downloaded.zip \
           "https://your-nexus-url/repository/your-repo/path/to/file.zip"
 
+          curl -u USER:PASSWORD -O $(curl -s -u USER:PASSWORD "https://nexus360.system.us.sbc:8081/nexus/maven_n3/com/fact/sbc/na/shared-lib/1.1.0/" | grep -oP 'gcp-shared-lib-1\.1\.0-[^"]+\.zip' | sort | tail -1 | sed 's|^|https://nexus360.system.us.sbc:8081/nexus/maven_n3/com/fact/sbc/na/shared-lib/1.1.0/|')
+
+
   # Step 2: Extract the ZIP
   - name: 'gcr.io/cloud-builders/unzip'
     args:
