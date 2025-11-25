@@ -11,6 +11,13 @@ pipeline {
         NEXUS_PASS = "service-password"
     }
 
+    LATEST=$(curl -s -u user:pass https://nexus.example.com/repository/raw/myapp/ \
+  | grep -oP '(?<=href=")[^"]+\.zip' | sort | tail -1)
+
+    curl -u user:pass -L -o latest.zip \
+  https://nexus.example.com/repository/raw/myapp/$LATEST
+
+
     stages {
 
         stage('Install Git + Zip') {
