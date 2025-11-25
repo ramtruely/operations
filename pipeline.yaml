@@ -1,3 +1,37 @@
+def loadVarsScripts() {
+    def varsDir = new File("${WORKSPACE}/vars")
+    varsDir.eachFileMatch(~/.*\.groovy/) { file -> evaluate(file) }
+}
+
+def loadSrcClasses() {
+    def srcDir = new File("${WORKSPACE}/src")
+    srcDir.eachFileMatch(~/.*\.groovy/) { file -> new GroovyShell().evaluate(file) }
+}
+
+def loadResourceFiles() {
+    // Example logic: load config files or templates
+    def config = new File("${WORKSPACE}/resources/config.yaml")
+    echo config.text
+}
+
+pipeline {
+    agent any
+    stages {
+        stage('init') {
+            steps {
+                script {
+                    loadVarsScripts()
+                    loadSrcClasses()
+                    loadResourceFiles()
+                }
+            }
+        }
+        // Use global functions from vars/, object instances from src/, and file contents from resources/
+    }
+}
+--
+---
+
 pipeline {
     agent any
     stages {
