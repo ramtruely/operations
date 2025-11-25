@@ -1,3 +1,35 @@
+pipeline {
+    agent any
+    stages {
+        stage('init') {
+            steps {
+                script {
+                    evaluate(new File("${WORKSPACE}/script.groovy"))
+                    evaluate(new File("${WORKSPACE}/utils.groovy"))
+                    evaluate(new File("${WORKSPACE}/deploy.groovy"))
+                }
+            }
+        }
+        stage('build') {
+            steps {
+                script {
+                    buildApp()      // from script.groovy
+                    utility()       // from utils.groovy
+                }
+            }
+        }
+        stage('deploy') {
+            steps {
+                script {
+                    deployApp()     // from deploy.groovy
+                }
+            }
+        }
+    }
+}
+
+
+
 steps:
   # Step 1: Download ZIP from Nexus
   - name: 'gcr.io/cloud-builders/curl'
