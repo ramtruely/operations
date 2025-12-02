@@ -1,3 +1,28 @@
+---
+@Library(
+    identifier: 'gcp-jenkins-shared-library@1.1.0-4c5654',
+    retriever: nexus(
+        nexusUrl: 'https://nexus306.systems.uk.sbc:8081',
+        repository: 'maven-sbc-internal-dev_n3p',
+        groupId: 'com.sbc.fctm.gsna.shared_lib',
+        artifactId: 'gcp-jenkins-shared-library',
+        version: '1.1.0-4c5654',
+        packaging: 'zip',
+        credentialsId: 'NEXUS3_CREDS'
+    )
+)
+
+
+
+
+
+
+
+
+
+
+
+---
 def loadVarsScripts() {
     def varsDir = new File("${WORKSPACE}/vars")
     varsDir.eachFileMatch(~/.*\.groovy/) { file -> evaluate(file) }
