@@ -1,13 +1,12 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
 
   <servers>
     <server>
       <id>internal-nexus</id>
-      <username>YOUR_NEXUS_USERNAME</username>
-      <password>YOUR_NEXUS_PASSWORD</password>
+      <username>${nexusUsername}</username>
+      <password>${nexusPassword}</password>
     </server>
   </servers>
 
@@ -15,8 +14,11 @@
     <mirror>
       <id>internal-nexus</id>
       <name>Internal Nexus</name>
-      <url>https://nexus306.systems.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev-n3p/</url>
-      <mirrorOf>*</mirrorOf>
+      <url>https://nexus306.systems.uk.hsbc:8081/nexus/repository/maven-hsbc-internal-dev-n3p/</url>
+
+      <!-- IMPORTANT FIX -->
+      <!-- Only override ARTIFACTS, not plugins -->
+      <mirrorOf>central,!plugin</mirrorOf>
     </mirror>
   </mirrors>
 
@@ -26,14 +28,25 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+
       <repositories>
         <repository>
           <id>internal-nexus</id>
-          <url>https://nexus306.systems.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev-n3p/</url>
+          <url>https://nexus306.systems.uk.hsbc:8081/nexus/repository/maven-hsbc-internal-dev-n3p/</url>
           <releases><enabled>true</enabled></releases>
           <snapshots><enabled>true</enabled></snapshots>
         </repository>
       </repositories>
+
+      <pluginRepositories>
+        <!-- Allow Maven Central for plugin downloads -->
+        <pluginRepository>
+          <id>central-plugins</id>
+          <url>https://repo.maven.apache.org/maven2</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
     </profile>
   </profiles>
 
