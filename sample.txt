@@ -1,53 +1,98 @@
-<!-- settings.xml -->
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <servers>
-    <!-- leave empty server entry if authentication is handled by Cloud Build SA -->
-    <server>
-      <id>sbc-nexus</id>
-    </server>
-  </servers>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
 
-  <mirrors>
-    <!-- Mirror only central to your Nexus internal repo (so artifacts present in internal are used).
-         Do NOT use mirrorOf="*" as that blocks plugin descriptors from Central if Nexus doesn't proxy them. -->
-    <mirror>
-      <id>sbc-internal-central</id>
-      <mirrorOf>central</mirrorOf>
-      <url>https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
-    </mirror>
-  </mirrors>
+  <id>lib</id>
 
-  <profiles>
-    <profile>
-      <id>internal-profile</id>
-      <repositories>
-        <!-- Internal repo (for your shared-lib zip) -->
-        <repository>
-          <id>sbc-nexus</id>
-          <url>https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
-        </repository>
+  <formats>
+    <format>zip</format>
+  </formats>
 
-        <!-- Explicitly keep Maven Central available for plugins and other dependencies -->
-        <repository>
-          <id>central</id>
-          <url>https://repo.maven.apache.org/maven2/</url>
-        </repository>
-      </repositories>
+  <includeBaseDirectory>false</includeBaseDirectory>
 
-      <pluginRepositories>
-        <!-- ensure plugins can be downloaded from Central if not proxied by your Nexus -->
-        <pluginRepository>
-          <id>central-plugins</id>
-          <url>https://repo.maven.apache.org/maven2/</url>
-        </pluginRepository>
-      </pluginRepositories>
-    </profile>
-  </profiles>
+  <fileSets>
 
-  <activeProfiles>
-    <activeProfile>internal-profile</activeProfile>
-  </activeProfiles>
-</settings>
+    <!-- Include all Groovy classes -->
+    <fileSet>
+      <directory>src</directory>
+      <outputDirectory>/src</outputDirectory>
+      <includes>
+        <include>**/*.groovy</include>
+      </includes>
+    </fileSet>
+
+    <!-- Include vars functions -->
+    <fileSet>
+      <directory>vars</directory>
+      <outputDirectory>/vars</outputDirectory>
+      <includes>
+        <include>*.groovy</include>
+        <include>*.txt</include>
+      </includes>
+    </fileSet>
+
+    <!-- Include resources -->
+    <fileSet>
+      <directory>resources</directory>
+      <outputDirectory>/resources</outputDirectory>
+      <includes>
+        <include>**/*.json</include>
+        <include>**/*.sh</include>
+      </includes>
+    </fileSet>
+
+    <!-- Version file -->
+    <fileSet>
+      <directory>.</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>version.txt</include>
+      </includes>
+    </fileSet>
+
+  </fileSets>
+
+</assembly>
+
+---
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.sbc.fctm.gsna</groupId>
+  <artifactId>shared_lib</artifactId>
+  <version>1.1.0</version>
+  <packaging>pom</packaging>
+
+  <build>
+    <finalName>gcp-jenkins-shared-lib-${project.version}</finalName>
+
+    <plugins>
+
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.4.2</version>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/assembly/assembly.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
+
+
