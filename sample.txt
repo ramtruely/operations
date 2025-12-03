@@ -1,3 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.sbc.fctm.gsna.shared_lib</groupId>
+  <artifactId>gcp-jenkins-shared-lib</artifactId>
+  <version>1.1.0</version>
+  <packaging>pom</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.3.0</version>
+
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <finalName>gcp-jenkins-shared-lib-${project.version}</finalName>
+              <descriptors>
+                <descriptor>assembly.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+---
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
@@ -11,88 +51,18 @@
   <includeBaseDirectory>false</includeBaseDirectory>
 
   <fileSets>
-
-    <!-- Include all Groovy classes -->
-    <fileSet>
-      <directory>src</directory>
-      <outputDirectory>/src</outputDirectory>
-      <includes>
-        <include>**/*.groovy</include>
-      </includes>
-    </fileSet>
-
-    <!-- Include vars functions -->
-    <fileSet>
-      <directory>vars</directory>
-      <outputDirectory>/vars</outputDirectory>
-      <includes>
-        <include>*.groovy</include>
-        <include>*.txt</include>
-      </includes>
-    </fileSet>
-
-    <!-- Include resources -->
-    <fileSet>
-      <directory>resources</directory>
-      <outputDirectory>/resources</outputDirectory>
-      <includes>
-        <include>**/*.json</include>
-        <include>**/*.sh</include>
-      </includes>
-    </fileSet>
-
-    <!-- Version file -->
     <fileSet>
       <directory>.</directory>
       <outputDirectory>/</outputDirectory>
+      <lineEnding>unix</lineEnding>
       <includes>
+        <include>src/**</include>
+        <include>vars/**</include>
+        <include>resources/**</include>
         <include>version.txt</include>
       </includes>
     </fileSet>
-
   </fileSets>
 
 </assembly>
-
----
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-  <modelVersion>4.0.0</modelVersion>
-
-  <groupId>com.sbc.fctm.gsna</groupId>
-  <artifactId>shared_lib</artifactId>
-  <version>1.1.0</version>
-  <packaging>pom</packaging>
-
-  <build>
-    <finalName>gcp-jenkins-shared-lib-${project.version}</finalName>
-
-    <plugins>
-
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>3.4.2</version>
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptors>
-                <descriptor>src/assembly/assembly.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-    </plugins>
-  </build>
-
-</project>
-
 
