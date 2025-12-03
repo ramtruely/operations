@@ -1,65 +1,53 @@
-COPY settings.xml /usr/share/maven/conf/settings.xml
-
------------------
-
 <!-- settings.xml -->
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                               https://maven.apache.org/xsd/settings-1.0.0.xsd">
   <servers>
-    <!-- No username/password required because Cloud Build SA (nexus3_creds) will authenticate -->
+    <!-- leave empty server entry if authentication is handled by Cloud Build SA -->
     <server>
       <id>sbc-nexus</id>
     </server>
   </servers>
 
   <mirrors>
-    <!-- Optional: mirror all requests to your internal repo if desired -->
+    <!-- Mirror only central to your Nexus internal repo (so artifacts present in internal are used).
+         Do NOT use mirrorOf="*" as that blocks plugin descriptors from Central if Nexus doesn't proxy them. -->
     <mirror>
-      <id>sbc-nexus</id>
-      <mirrorOf>*</mirrorOf>
+      <id>sbc-internal-central</id>
+      <mirrorOf>central</mirrorOf>
       <url>https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
     </mirror>
   </mirrors>
 
   <profiles>
     <profile>
-      <id>internal-nexus</id>
+      <id>internal-profile</id>
       <repositories>
+        <!-- Internal repo (for your shared-lib zip) -->
         <repository>
           <id>sbc-nexus</id>
           <url>https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
         </repository>
+
+        <!-- Explicitly keep Maven Central available for plugins and other dependencies -->
+        <repository>
+          <id>central</id>
+          <url>https://repo.maven.apache.org/maven2/</url>
+        </repository>
       </repositories>
+
+      <pluginRepositories>
+        <!-- ensure plugins can be downloaded from Central if not proxied by your Nexus -->
+        <pluginRepository>
+          <id>central-plugins</id>
+          <url>https://repo.maven.apache.org/maven2/</url>
+        </pluginRepository>
+      </pluginRepositories>
     </profile>
   </profiles>
 
   <activeProfiles>
-    <activeProfile>internal-nexus</activeProfile>
+    <activeProfile>internal-profile</activeProfile>
   </activeProfiles>
 </settings>
----
-@Library('gcp-jenkins-shared-lib') _
-library(
-    identifier: 'gcp-jenkins-shared-lib@1.1.0',
-    retriever: nexus(
-        artifactDetails: 'com.sbc.fctm.gsna.shared_lib:gcp-jenkins-shared-lib:${library.gcp-jenkins-shared-lib.version}:zip:4c5676',
-        mavenHome: '/usr/share/maven'
-    )
-)
-
-pipeline {
-  agent any
-  stages {
-    stage('Use lib example') {
-      steps {
-        script {
-          // Example usage of a shared lib variable/function
-          echo "Shared library loaded. Call a function if present:"
-          // if your lib defines a function e.g. utils.someMethod(), call it here
-        }
-      }
-    }
-  }
-}
