@@ -4,6 +4,10 @@ RUN mkdir -p /usr/share/maven/conf/
 # Copy settings.xml for Nexus+Central
 COPY settings.xml /usr/share/maven/conf/settings.xml
 
+mvn deploy \
+  -DaltDeploymentRepository=nexus-releases::default::https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/
+
+
 ---
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
