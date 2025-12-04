@@ -8,7 +8,7 @@ COPY settings.xml /usr/share/maven/conf/settings.xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -17,8 +17,20 @@ COPY settings.xml /usr/share/maven/conf/settings.xml
     <version>1.1.0</version>
     <packaging>zip</packaging>
 
+    <!-- REQUIRED FOR DEPLOY WITHOUT USERNAME/PASSWORD -->
     <build>
+        <extensions>
+            <!-- Enables Maven Wagon HTTP (needed for Token / ServiceAccount auth) -->
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-http</artifactId>
+                <version>3.5.2</version>
+            </extension>
+        </extensions>
+
         <plugins>
+
+            <!-- 1. PACKAGE YOUR ZIP LIBRARY -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
@@ -30,16 +42,37 @@ COPY settings.xml /usr/share/maven/conf/settings.xml
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <!-- IMPORTANT: You said your assembly.xml is at this path -->
                             <descriptors>
-                                <descriptor>src/assembly/assembly.xml</descriptor>
+                                <descriptor>assembly.xml</descriptor>
                             </descriptors>
+
                             <finalName>${project.artifactId}-${project.version}</finalName>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- 2. DEPLOY ZIP TO NEXUS USING MAVEN -->
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
+
+    <!-- 3. WHERE MAVEN WILL DEPLOY (NO ENV VARS, HARDCODED) -->
+    <distributionManagement>
+        <repository>
+            <id>nexus3</id>
+            <url>https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
+        </repository>
+    </distributionManagement>
+
 </project>
 
 ---
