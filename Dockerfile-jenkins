@@ -1,0 +1,27 @@
+# Base Jenkins LTS image (Ubuntu-based)
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install Maven
+RUN apt-get update && \
+    apt-get install -y maven && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create Maven settings directory for the jenkins user
+RUN mkdir -p /var/lib/jenkins/.m2 && \
+    chown -R jenkins:jenkins /var/lib/jenkins/.m2
+
+# Copy your custom settings.xml into Jenkins' Maven home
+# (keep a settings.xml file next to this Dockerfile)
+COPY settings.xml /var/lib/jenkins/.m2/settings.xml
+
+# Ensure ownership so Jenkins (user jenkins) can read it
+RUN chown jenkins:jenkins /var/lib/jenkins/.m2/settings.xml
+
+# Optional: verify Maven location and JENKINS_HOME (for debugging)
+RUN echo "JENKINS_HOME is ${JENKINS_HOME}" && \
+    mvn -version || true
+
+# Switch back to jenkins user
+USER jenkins
