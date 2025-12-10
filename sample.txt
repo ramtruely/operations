@@ -24,3 +24,130 @@ mvn -s settings.xml help:effective-settings
 
 ---
 http://35.222.195.140:8081/repository/maven-nexus-lib/com/example/jenkins-shared-lib/3.1.1/jenkins-shared-lib-3.1.1.zip
+
+---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.sbc.fctm.nsa</groupId>
+  <artifactId>jenkins-shared-lib</artifactId>
+  <version>3.1.1</version>
+  <packaging>jar</packaging>
+
+  <name>jenkins-shared-lib</name>
+  <description>Jenkins shared library</description>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.clean.failOnError>false</maven.clean.failOnError>
+  </properties>
+
+  <!-- Deploy only to internal hosted repo -->
+  <distributionManagement>
+    <repository>
+      <id>maven-hsbc-internal-deploy_n3p</id>
+      <name>Internal releases</name>
+      <!-- TODO: replace with real hosted deploy repo URL -->
+      <url>https://your-nexus-host/nexus/repository/maven-hsbc-internal-deploy_n3p/</url>
+    </repository>
+  </distributionManagement>
+
+  <!-- Optional: explicitly declare repos if you don't want to rely only on settings.xml -->
+  <repositories>
+    <repository>
+      <id>mavencentral_iq</id>
+      <name>Maven Central via IQ proxy</name>
+      <!-- TODO: replace with real mavencentral_iq URL -->
+      <url>https://your-nexus-host/nexus/repository/mavencentral_iq/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+
+    <repository>
+      <id>internal-releases</id>
+      <name>Internal releases</name>
+      <url>https://your-nexus-host/nexus/repository/maven-hsbc-internal-deploy_n3p/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+
+      <!-- Skip standard JAR; use assembly ZIP instead -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Build shared-lib ZIP from vars/src/resources -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <descriptors>
+            <descriptor>assembly.xml</descriptor>
+          </descriptors>
+          <finalName>${project.artifactId}-${project.version}-lib</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Skip tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Clean (optional; you can remove if still problematic) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <failOnError>false</failOnError>
+        </configuration>
+      </plugin>
+
+      <!-- Explicit deploy plugin so 'deploy' goal works -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.1</version>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
+---
