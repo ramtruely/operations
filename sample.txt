@@ -15,3 +15,6 @@ mvn -s settings.xml -B deploy:deploy-file \
 ---
 
 mvn -s settings.xml -B clean package deploy
+
+---
+http://35.222.195.140:8081/repository/maven-nexus-lib/com/example/jenkins-shared-lib/3.1.1/jenkins-shared-lib-3.1.1.zip
