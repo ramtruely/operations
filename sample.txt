@@ -18,6 +18,9 @@ mvn -s settings.xml -U -B clean package deploy
 
 rm -rf ~/.m2/repository/org/apache/maven/plugins
 
+mvn -s settings.xml help:effective-settings
+
+
 
 ---
 http://35.222.195.140:8081/repository/maven-nexus-lib/com/example/jenkins-shared-lib/3.1.1/jenkins-shared-lib-3.1.1.zip
