@@ -14,7 +14,10 @@ mvn -s settings.xml -B deploy:deploy-file \
     -Dpassword=$NEXUS3_CREDS
 ---
 
-mvn -s settings.xml -B clean package deploy
+mvn -s settings.xml -U -B clean package deploy
+
+rm -rf ~/.m2/repository/org/apache/maven/plugins
+
 
 ---
 http://35.222.195.140:8081/repository/maven-nexus-lib/com/example/jenkins-shared-lib/3.1.1/jenkins-shared-lib-3.1.1.zip
