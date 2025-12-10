@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.sbc.fctm.nsa</groupId>
+  <artifactId>jenkins-shared-lib</artifactId>
+  <version>3.1.1</version>
+  <packaging>jar</packaging>
+
+  <name>jenkins-shared-lib</name>
+  <description>Jenkins shared library</description>
+
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.clean.failOnError>false</maven.clean.failOnError>
+  </properties>
+
+  <!-- Nexus deploy target -->
+  <distributionManagement>
+    <repository>
+      <id>maven-sbc-internal-dev_n3p</id>
+      <name>Nexus Releases</name>
+      <!-- make sure 'repository' is spelled correctly -->
+      <url>https://nexus306.systems.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
+    </repository>
+  </distributionManagement>
+
+  <build>
+    <plugins>
+
+      <!-- Skip normal JAR, you only care about the ZIP -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Build shared-lib ZIP via assembly.xml -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <descriptors>
+            <descriptor>assembly.xml</descriptor>
+          </descriptors>
+          <!-- result will be jenkins-shared-lib-3.1.1-lib.zip -->
+          <finalName>${project.artifactId}-${project.version}-lib</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Skip tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Clean should not fail build -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>3.3.2</version>
+        <configuration>
+          <failOnError>false</failOnError>
+        </configuration>
+      </plugin>
+
+      <!-- Explicit deploy plugin: fixes 'No plugin found for prefix: deploy' -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.1</version>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
