@@ -59,3 +59,73 @@
     <activeProfile>nexus</activeProfile>
   </activeProfiles>
 </settings>
+---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <servers>
+    <!-- Must match pom.xml distributionManagement/repository/id -->
+    <server>
+      <id>maven-sbc-internal-dev_n3p</id>
+      <username>NEXUS3_CREDS</username>
+      <password>${env.NEXUS3_CREDS}</password>
+    </server>
+  </servers>
+
+  <profiles>
+    <profile>
+      <id>nexus</id>
+
+      <!-- Where to download dependencies from -->
+      <repositories>
+        <!-- Central directly (optional if you have Nexus proxy) -->
+        <repository>
+          <id>central</id>
+          <name>Maven Central</name>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+
+        <!-- Your internal hosted repo for your own artifacts -->
+        <repository>
+          <id>maven-sbc-internal-dev_n3p</id>
+          <name>Nexus internal releases</name>
+          <url>https://nexus306.systems.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev_n3p/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+      </repositories>
+
+      <!-- Where to download plugins (clean/resources/deploy/etc.) from -->
+      <pluginRepositories>
+        <!-- Prefer Nexus public/proxy here so it can serve all core plugins -->
+        <pluginRepository>
+          <id>nexus-public-plugins</id>
+          <name>Nexus public plugins</name>
+          <url>https://nexus306.systems.uk.sbc:8081/nexus/repository/maven-public/</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+
+        <!-- Optional: direct Central plugins (can remove if org blocks internet) -->
+        <pluginRepository>
+          <id>central-plugins</id>
+          <name>Maven Central plugins</name>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>false</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+
+</settings>
