@@ -1,3 +1,8 @@
+library identifier: 'jenkins-shared-lib@3.1.1', retriever: http(
+   credentialsId: 'CREDS_ID',
+   httpURL: 'https://nexus306.system.uk.sbc:8081/nexus/repository/maven-sbc-internal-dev-n3p/com/sbc/fctm/sna/shared_lib/jenkins-shared-lib-${library.'jenkins-shared-lib'.version}.zip')
+
+---
 # 1) build the ZIP
 mvn -s settings.xml -B clean package
 
