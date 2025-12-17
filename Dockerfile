@@ -1,3 +1,6 @@
+docker run --rm us-central1-docker.pkg.dev/<PROJECT>/<REPO>/ubuntu:latest cat /etc/os-release
+
+...
 FROM maven:3.9.9-eclipse-temurin-8 AS builder
 
 # Set environment variable for Nexus password (CI should override this)
