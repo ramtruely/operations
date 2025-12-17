@@ -59,4 +59,7 @@ this.binding.setProperty("vars", vars)
 this.binding.setProperty("resource", resource)
 this.binding.setProperty("stage", stage)
 
+def env = [:]
+def params = [:]
+
 println "[BOOTSTRAP] Ready"
