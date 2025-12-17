@@ -1,0 +1,115 @@
+/*
+  Full deploy_sql.groovy orchestrator
+  Includes bootstrap block for src, vars, resources, tests
+  Ready for Cloud Build / local Groovy execution
+*/
+
+import groovy.lang.GroovyClassLoader
+
+println "[BOOTSTRAP] Initializing..."
+
+File workspace = new File(".").canonicalFile
+println "[BOOTSTRAP] Workspace: ${workspace}"
+
+File srcDir         = new File(workspace, "src")
+File varsDir        = new File(workspace, "vars")
+File resourcesDir   = new File(workspace, "resources")
+File testsSrcDir    = new File(workspace, "tests/src")
+File testsGroovyDir = new File(workspace, "tests/src/test/groovy")
+
+GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader)
+
+[srcDir, testsSrcDir, testsGroovyDir].each { dir ->
+    if (dir.exists()) {
+        dir.eachFileRecurse { file ->
+            if (file.name.endsWith(".groovy")) {
+                loader.parseClass(file)
+            }
+        }
+    }
+}
+
+Map vars = [:]
+
+if (varsDir.exists()) {
+    varsDir.eachFile { file ->
+        if (file.name.endsWith(".groovy")) {
+            def stepName = file.name.replace(".groovy", "")
+            def clazz = loader.parseClass(file)
+            vars[stepName] = clazz.newInstance()
+        }
+    }
+}
+
+def resource = { String path ->
+    File f = new File(resourcesDir, path)
+    if (!f.exists()) {
+        throw new RuntimeException("Resource not found: ${path}")
+    }
+    f
+}
+
+def stage = { String name, Closure body ->
+    println "\n=============================="
+    println " STAGE : ${name}"
+    println "=============================="
+    body()
+}
+
+def env = [:]
+def params = [:]
+
+this.binding.setProperty("vars", vars)
+this.binding.setProperty("resource", resource)
+this.binding.setProperty("stage", stage)
+this.binding.setProperty("env", env)
+this.binding.setProperty("params", params)
+
+println "[BOOTSTRAP] Ready"
+println "--------------------------------------------------"
+
+
+/* ================= ORCHESTRATOR START ================= */
+
+env.JOB_NAME = "deploy-sql"
+env.WORKSPACE = workspace.absolutePath
+
+println "[PIPELINE] Job Name : ${env.JOB_NAME}"
+println "[PIPELINE] Workspace: ${env.WORKSPACE}"
+
+def sqlInstanceName = "demo-sql-instance"
+
+try {
+
+    stage("Set deployment configuration") {
+        println "Preparing deployment parameters"
+        println "SQL Instance: ${sqlInstanceName}"
+    }
+
+    stage("Deploy Infra") {
+        vars.deployInfra.call(
+            workspace: env.WORKSPACE,
+            sqlInstanceName: sqlInstanceName
+        )
+    }
+
+    stage("Post Deployment Validation") {
+        println "Running validations..."
+    }
+
+} catch (Exception e) {
+    println "[ERROR] Pipeline failed: ${e.message}"
+    throw e
+} finally {
+
+    stage("Destroy Infra") {
+        vars.destroyInfra.call(
+            sqlInstanceName: sqlInstanceName
+        )
+    }
+
+}
+
+println "\n-----------------------------"
+println " Pipeline execution finished "
+println "-----------------------------"
