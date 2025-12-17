@@ -16,7 +16,7 @@ steps:
 
         unzip repo.zip
 
-        echo "listing workspace"
+        echo "listing workspace..."
 
         ls -ltr /workspace
     entrypoint: bash
