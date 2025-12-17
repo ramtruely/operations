@@ -1,0 +1,83 @@
+/* =========================================================
+   PIPELINE BOOTSTRAP (Jenkins Shared Lib Replacement)
+   Covers:
+   - src/**        (classes)
+   - vars/*        (steps)
+   - resources/**  (json, sh, py)
+   - tests/src/**  (optional test utilities)
+   ========================================================= */
+
+import groovy.lang.GroovyClassLoader
+
+println "[BOOTSTRAP] Initializing pipeline runtime..."
+
+File workspace = new File(".").canonicalFile
+println "[BOOTSTRAP] Workspace: ${workspace}"
+
+// ---- Directories ----
+File srcDir       = new File(workspace, "src")
+File varsDir      = new File(workspace, "vars")
+File resourcesDir = new File(workspace, "resources")
+File testsDir     = new File(workspace, "tests/src")
+
+// ---- ClassLoader ----
+GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader)
+
+// ---- Load SRC classes ----
+if (srcDir.exists()) {
+    srcDir.eachFileRecurse { file ->
+        if (file.name.endsWith(".groovy")) {
+            loader.parseClass(file)
+        }
+    }
+    println "[BOOTSTRAP] Loaded src/** classes"
+}
+
+// ---- Load TEST classes (optional, safe) ----
+if (testsDir.exists()) {
+    testsDir.eachFileRecurse { file ->
+        if (file.name.endsWith(".groovy")) {
+            loader.parseClass(file)
+        }
+    }
+    println "[BOOTSTRAP] Loaded tests/src/** classes"
+}
+
+// ---- Load VARS as steps ----
+Map vars = [:]
+
+if (varsDir.exists()) {
+    varsDir.eachFile { file ->
+        if (file.name.endsWith(".groovy")) {
+            def stepName = file.name.replace(".groovy", "")
+            def clazz = loader.parseClass(file)
+            vars[stepName] = clazz.newInstance()
+        }
+    }
+    println "[BOOTSTRAP] Loaded vars/* steps: ${vars.keySet()}"
+}
+
+// ---- Resource helper ----
+def resource = { String path ->
+    File f = new File(resourcesDir, path)
+    if (!f.exists()) {
+        throw new RuntimeException("Resource not found: ${path}")
+    }
+    return f
+}
+
+// ---- Lightweight stage abstraction (optional but recommended) ----
+def stage = { String name, Closure body ->
+    println "\n=============================="
+    println " STAGE : ${name}"
+    println "=============================="
+    body()
+}
+
+// ---- Expose globals (Jenkins-like) ----
+this.binding.setProperty("vars", vars)
+this.binding.setProperty("resource", resource)
+this.binding.setProperty("stage", stage)
+
+println "[BOOTSTRAP] Pipeline runtime ready"
+println "--------------------------------------------------"
