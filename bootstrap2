@@ -5,11 +5,11 @@ println "[BOOTSTRAP] Initializing..."
 File workspace = new File(".").canonicalFile
 println "[BOOTSTRAP] Workspace: ${workspace}"
 
-File srcDir        = new File(workspace, "src")
-File varsDir       = new File(workspace, "vars")
-File resourcesDir  = new File(workspace, "resources")
-File testsSrcDir   = new File(workspace, "tests/src")
-File testsGroovyDir= new File(workspace, "tests/src/test/groovy")
+File srcDir         = new File(workspace, "src")
+File varsDir        = new File(workspace, "vars")
+File resourcesDir   = new File(workspace, "resources")
+File testsSrcDir    = new File(workspace, "tests/src")
+File testsGroovyDir = new File(workspace, "tests/src/test/groovy")
 
 GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader)
 
@@ -50,74 +50,13 @@ def stage = { String name, Closure body ->
     body()
 }
 
-this.binding.setProperty("vars", vars)
-this.binding.setProperty("resource", resource)
-this.binding.setProperty("stage", stage)
-
-import groovy.lang.GroovyClassLoader
-
-println "[BOOTSTRAP] Initializing..."
-
-File workspace = new File(".").canonicalFile
-println "[BOOTSTRAP] Workspace: ${workspace}"
-
-File srcDir       = new File(workspace, "src")
-File varsDir      = new File(workspace, "vars")
-File resourcesDir = new File(workspace, "resources")
-File testsDir     = new File(workspace, "tests/src")
-
-GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader)
-
-if (srcDir.exists()) {
-    srcDir.eachFileRecurse { file ->
-        if (file.name.endsWith(".groovy")) {
-            loader.parseClass(file)
-        }
-    }
-}
-
-if (testsDir.exists()) {
-    testsDir.eachFileRecurse { file ->
-        if (file.name.endsWith(".groovy")) {
-            loader.parseClass(file)
-        }
-    }
-}
-
-Map vars = [:]
-
-if (varsDir.exists()) {
-    varsDir.eachFile { file ->
-        if (file.name.endsWith(".groovy")) {
-            def stepName = file.name.replace(".groovy", "")
-            def clazz = loader.parseClass(file)
-            vars[stepName] = clazz.newInstance()
-        }
-    }
-}
-
-def resource = { String path ->
-    File f = new File(resourcesDir, path)
-    if (!f.exists()) {
-        throw new RuntimeException("Resource not found: ${path}")
-    }
-    f
-}
-
-def stage = { String name, Closure body ->
-    println "\n=============================="
-    println " STAGE : ${name}"
-    println "=============================="
-    body()
-}
-
-this.binding.setProperty("vars", vars)
-this.binding.setProperty("resource", resource)
-this.binding.setProperty("stage", stage)
-
 def env = [:]
 def params = [:]
 
-println "[BOOTSTRAP] Ready"
+this.binding.setProperty("vars", vars)
+this.binding.setProperty("resource", resource)
+this.binding.setProperty("stage", stage)
+this.binding.setProperty("env", env)
+this.binding.setProperty("params", params)
 
 println "[BOOTSTRAP] Ready"
