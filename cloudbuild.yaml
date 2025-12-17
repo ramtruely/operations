@@ -1,0 +1,35 @@
+steps:
+  - name: gcr.io/cloud-builders/gcloud
+    args:
+      - '-c'
+      - >
+        set -e
+
+        apt-get update
+
+        apt-get install -y wget unzip
+
+        cd /workspace
+
+        wget -O repo.zip
+        https://github.com/ramtruely/groovy-lib/archive/refs/heads/main.zip
+
+        unzip repo.zip
+
+        echo "listing workspace"
+
+        ls -ltr /workspace
+    entrypoint: bash
+  - name: >-
+      us-central1-docker.pkg.dev/devops-446301/my-docker-repo/groovy-builder-image
+    args:
+      - '-c'
+      - |
+        cd /workspace/groovy-lib-main
+        groovy scripts/main.groovy
+
+        echo "---- Artifact Content ----"
+        cat build/demo-build.txt
+    entrypoint: bash
+options:
+  logging: CLOUD_LOGGING_ONLY
