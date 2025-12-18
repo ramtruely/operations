@@ -1,0 +1,82 @@
+import groovy.lang.GroovyShell
+
+println "[BOOTSTRAP] Initializing..."
+
+File workspace = new File(".").canonicalFile
+println "[BOOTSTRAP] Workspace: ${workspace}"
+
+File srcDir       = new File(workspace, "src")
+File varsDir      = new File(workspace, "vars")
+File resourcesDir = new File(workspace, "resources")
+File testsSrcDir  = new File(workspace, "tests/src")
+
+/* --------------------------------------------------
+   SCRIPT-BASED LOADER (NO CLASS NAME ENFORCEMENT)
+-------------------------------------------------- */
+
+GroovyShell shell = new GroovyShell(this.class.classLoader, this.binding)
+
+/* 1. Load src scripts (utils.groovy, helpers, etc.) */
+if (srcDir.exists()) {
+    srcDir.eachFileRecurse { file ->
+        if (file.name.endsWith(".groovy")) {
+            shell.evaluate(file)
+        }
+    }
+}
+
+/* 2. Load test scripts */
+if (testsSrcDir.exists()) {
+    testsSrcDir.eachFileRecurse { file ->
+        if (file.name.endsWith(".groovy")) {
+            shell.evaluate(file)
+        }
+    }
+}
+
+/* 3. Load vars steps */
+Map vars = [:]
+
+if (varsDir.exists()) {
+    varsDir.eachFile { file ->
+        if (file.name.endsWith(".groovy")) {
+            def stepName = file.name.replace(".groovy", "")
+            def script   = shell.parse(file)
+
+            vars[stepName] = script
+
+            // Allow direct call: deployInfra(...)
+            this.binding.setProperty(stepName, script.&call)
+        }
+    }
+}
+
+/* 4. resource() helper */
+def resource = { String path ->
+    File f = new File(resourcesDir, path)
+    if (!f.exists()) {
+        throw new RuntimeException("Resource not found: ${path}")
+    }
+    f
+}
+
+/* 5. stage() helper */
+def stage = { String name, Closure body ->
+    println "\n=============================="
+    println " STAGE : ${name}"
+    println "=============================="
+    body()
+}
+
+/* 6. Jenkins-like globals */
+def env    = [:]
+def params = [:]
+
+this.binding.setProperty("vars", vars)
+this.binding.setProperty("resource", resource)
+this.binding.setProperty("stage", stage)
+this.binding.setProperty("env", env)
+this.binding.setProperty("params", params)
+
+println "[BOOTSTRAP] Ready"
+println "--------------------------------------------------"
