@@ -1,0 +1,70 @@
+import groovy.lang.GroovyClassLoader
+
+println "[BOOTSTRAP] Initializing..."
+
+File workspace = new File(".").canonicalFile
+println "[BOOTSTRAP] Workspace: ${workspace}"
+
+File srcDir       = new File(workspace, "src")
+File testsDir     = new File(workspace, "tests/src")
+File varsDir      = new File(workspace, "vars")
+File resourcesDir = new File(workspace, "resources")
+
+GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader)
+
+/* 1️⃣ Compile src/** as CLASSES (supports imports + packages) */
+[srcDir, testsDir].each { dir ->
+    if (dir.exists()) {
+        loader.addClasspath(dir.absolutePath)
+    }
+}
+
+/* 2️⃣ Precompile src + tests */
+[srcDir, testsDir].each { dir ->
+    if (dir.exists()) {
+        dir.eachFileRecurse { f ->
+            if (f.name.endsWith(".groovy")) {
+                loader.parseClass(f)
+            }
+        }
+    }
+}
+
+/* 3️⃣ Load vars/** as SCRIPT steps */
+Map vars = [:]
+
+if (varsDir.exists()) {
+    varsDir.eachFile { file ->
+        if (file.name.endsWith(".groovy")) {
+            def clazz = loader.parseClass(file)
+            def inst  = clazz.newInstance()
+            def name  = file.name - ".groovy"
+
+            vars[name] = inst
+            this.binding.setProperty(name, inst.&call)
+        }
+    }
+}
+
+/* 4️⃣ Helpers */
+def resource = { String path ->
+    File f = new File(resourcesDir, path)
+    if (!f.exists()) throw new RuntimeException("Missing resource: $path")
+    f
+}
+
+def stage = { String name, Closure body ->
+    println "\n=============================="
+    println " STAGE : ${name}"
+    println "=============================="
+    body()
+}
+
+this.binding.setProperty("vars", vars)
+this.binding.setProperty("resource", resource)
+this.binding.setProperty("stage", stage)
+this.binding.setProperty("env", [:])
+this.binding.setProperty("params", [:])
+
+println "[BOOTSTRAP] Ready"
+println "--------------------------------------------------"
