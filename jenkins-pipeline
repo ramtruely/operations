@@ -1,0 +1,18 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[
+            url: 'https://github.com/ORG/REPO.git',
+            credentialsId: 'github-creds'
+          ]]
+        ])
+      }
+    }
+  }
+}
