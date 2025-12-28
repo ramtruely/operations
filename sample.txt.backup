@@ -1,0 +1,80 @@
+#!groovy
+
+node {
+    deleteDir()
+    checkout scm
+
+    stage('Load Shared Library') {
+        sh '''
+          curl -u $NEXUS_USER:$NEXUS_PASSWORD \
+          -L https:// \
+          -o shared-lib.zip
+
+          unzip -o shared-lib.zip -d shared-lib
+        '''
+    }
+
+    // Load helper
+    def helper = load "shared-lib/src/org/gsna/dependencies/Helper.groovy"
+    def infra  = load "shared-lib/vars/deployInfrastructure.groovy"
+    def destroy = load "shared-lib/vars/destroyInfrastructure.groovy"
+
+    env.JOB_NAME = 'NA/GCP/DEVOPS/DevOps/Deploy_Pipelines/Deploy_Environment'
+
+    stage('Deploy') {
+        currentBuild.displayName = "#${BUILD_NUMBER}-${params.WORKSPACE_NAME}-${params.ACTION}"
+
+        if (params.ACTION in ['apply','plan']) {
+            infra.call(
+                workspace: params.WORKSPACE_NAME,
+                action: params.ACTION,
+                environmentTemplate: params.ENVIRONMENT_TEMPLATE,
+                deploymentMode: "TTL",
+                targetInfra: params.TARGET_ELASTIC,
+                versionGroup: params.VERSION_GROUP
+            )
+        } else {
+            destroy.call(
+                workspace: params.WORKSPACE_NAME,
+                action: params.ACTION,
+                deploymentMode: "TTL"
+            )
+        }
+    }
+} 
+
+---
+steps:
+- name: europe-west2-docker.pkg.dev/$PROJECT_ID/jenkins-cicd/cloudbuild-runner-image:latest
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      set -e
+
+      echo "Starting Vault..."
+      export VAULT_ADDR=https://127.0.0.1:8200
+      nohup vault server -config=/etc/vault.d/vault_config/vault.hcl >/tmp/vault.log 2>&1 &
+
+      echo "Cloning pipeline repo..."
+      git clone --branch GSNA-60750-Nexus \
+        https://${GITHUB_CREDS}@alm-github.systems.uk.hsbc/GSNA/gcp-terraform-cloudbuild-nat.git
+
+      echo "Running Jenkinsfile Runner..."
+      /cloudbuild-runner-image/cloudbuild-runner/bin/jenkinsfile-runner run \
+        -w /cloudbuild-runner-image/cloudbuild-runner-runtime \
+        -p /cloudbuild-runner-image/plugins \
+        -f gcp-terraform-cloudbuild-nat/pipelines/deploy_af.groovy \
+        -a WORKSPACE_NAME=${_WORKSPACE_NAME} \
+        -a ACTION=${_ACTION} \
+        -a ENVIRONMENT_TEMPLATE=${_ENVIRONMENT_TEMPLATE} \
+        -a ENVIRONMENT_TTL=${_ENVIRONMENT_TTL} \
+        -a META_BRANCH=${_META_BRANCH} \
+        -a JENKINS_SHARED_LIB=${_JENKINS_SHARED_LIB} \
+        -a GOOGLE_PROJECT=${_PROJECT_ID}
+
+secretEnv:
+- GITHUB_CREDS
+- NEXUS_USER
+- NEXUS_PASSWORD
+- VAULT_TOKEN 
